@@ -1,0 +1,784 @@
+##### DNA methylation analysis using CHMAP and limma packages in R
+
+library(ChAMPdata)
+library(DMRcate)
+library(DMRcatedata)
+library(ChAMP)
+library(methods)
+library(rlist)
+library(missMethyl)
+library(limma)
+
+#load Data
+data.dir <- file.path("~/rb32/wsuw0002/dna_methylation/15032023_batch_blue_red")
+myLoad <- champ.load(directory = data.dir, arraytype = "EPIC")
+
+#QC
+champ.QC(beta = myLoad$beta,
+         pheno=myLoad$pd$Sample_Group,
+         mdsPlot=TRUE,
+         densityPlot=TRUE,
+         dendrogram=TRUE,
+         PDFplot=TRUE,
+         Rplot=TRUE,
+         Feature.sel="None",
+         resultsDir="~/rb32/wsuw0002/dna_methylation/15032023_batch_blue_red/16032023_full_analysis/")
+
+#normalisation
+myNorm = champ.norm(beta=myLoad$beta,
+                    rgSet=myLoad$rgSet,
+                    mset=myLoad$mset,
+                    method="BMIQ",
+                    plotBMIQ=TRUE,
+                    resultsDir="~/rb32/wsuw0002/dna_methylation/15032023_batch_blue_red/16032023_full_analysis/",
+                    arraytype="EPIC",
+                    cores=5)
+
+#correctBatch effect
+myCombat <- champ.runCombat(beta=myNorm,pd=myLoad$pd,batchname=c("Batch"))
+
+#DMP
+myDMP = champ.DMP(beta = myCombat,
+                  pheno = myLoad$pd$Sample_Group,
+                  compare.group = NULL,
+                  adjPVal = 1,
+                  adjust.method = "BH",
+                  arraytype = "EPIC")
+
+comparision <- c("Mother1_to_Mother2", "Mother1_to_Baby1", "Mother1_to_Baby2", "Mother1_to_Mother3", "Mother1_to_Baby3", "Mother2_to_Baby1",  
+                 "Mother2_to_Baby2",  "Mother2_to_Mother3", "Mother2_to_Baby3", "Baby1_to_Baby2", "Baby1_to_Mother3", "Baby1_to_Baby3",    
+                 "Baby2_to_Mother3",  "Baby2_to_Baby3", "Mother3_to_Baby3")
+
+for(i in 1:length(comparision)){
+  myDMP[[i]] <- subset(myDMP[[i]], adj.P.Val < 0.05)
+  write.csv(data.frame(myDMP[[i]]), file = paste0(names(myDMP)[i], '_batch_blue_red.csv'))
+}
+
+#Mother1_to_Mother2
+myDMR_Mother1_to_Mother2 = champ.DMR(beta=myCombat,
+                                     pheno=myLoad$pd$Sample_Group,
+                                     compare.group=c("Mother1","Mother2"),
+                                     arraytype="EPIC",
+                                     method = "Bumphunter",
+                                     minProbes=7,
+                                     adjPvalDmr=0.05,
+                                     cores=3,
+                                     maxGap=300,
+                                     cutoff=NULL,
+                                     pickCutoff=TRUE,
+                                     smooth=TRUE,
+                                     smoothFunction=loessByCluster,
+                                     useWeights=FALSE,
+                                     permutations=NULL,
+                                     B=250,
+                                     nullMethod="bootstrap",
+                                     Rplot=T,
+                                     PDFplot=T)
+
+
+
+write.csv(data.frame(myDMR_Mother1_to_Mother2$BumphunterDMR), file="myDMR_Mother1_to_Mother2.csv")
+
+myGSEA_Mother1_to_Mother2 <- champ.GSEA(beta=myCombat,DMP=myDMP[["Mother1_to_Mother2"]], DMR=myDMR_Mother1_to_Mother2, 
+                                        arraytype="EPIC",adjPval=0.05, method="fisher")
+
+write.csv(data.frame(myGSEA_Mother1_to_Mother2$DMP), file = "myGSEA_Mother1_to_Mother2_DMP.csv")
+write.csv(data.frame(myGSEA_Mother1_to_Mother2$DMR), file = "myGSEA_Mother1_to_Mother2_DMR.csv")
+
+
+#Mother1_to_Baby1
+myDMR_Mother1_to_Baby1 = champ.DMR(beta=myCombat,
+                                   pheno=myLoad$pd$Sample_Group,
+                                   compare.group=c("Mother1","Baby1"),
+                                   arraytype="EPIC",
+                                   method = "Bumphunter",
+                                   minProbes=7,
+                                   adjPvalDmr=0.05,
+                                   cores=3,
+                                   maxGap=300,
+                                   cutoff=NULL,
+                                   pickCutoff=TRUE,
+                                   smooth=TRUE,
+                                   smoothFunction=loessByCluster,
+                                   useWeights=FALSE,
+                                   permutations=NULL,
+                                   B=250,
+                                   nullMethod="bootstrap",
+                                   Rplot=T,
+                                   PDFplot=T)
+
+
+
+write.csv(data.frame(myDMR_Mother1_to_Baby1$BumphunterDMR), file="myDMR_Mother1_to_Baby1.csv")
+
+myGSEA_Mother1_to_Baby1 <- champ.GSEA(beta=myCombat,DMP=myDMP[["Mother1_to_Baby1"]], DMR=myDMR_Mother1_to_Baby1, 
+                                      arraytype="EPIC",adjPval=0.05, method="fisher")
+
+write.csv(data.frame(myGSEA_Mother1_to_Baby1$DMP), file = "myGSEA_Mother1_to_Baby1_DMP.csv")
+write.csv(data.frame(myGSEA_Mother1_to_Baby1$DMR), file = "myGSEA_Mother1_to_Baby1_DMR.csv")
+
+
+
+#Mother1_to_Baby2
+myDMR_Mother1_to_Baby2 = champ.DMR(beta=myCombat,
+                                   pheno=myLoad$pd$Sample_Group,
+                                   compare.group=c("Mother1","Baby2"),
+                                   arraytype="EPIC",
+                                   method = "Bumphunter",
+                                   minProbes=7,
+                                   adjPvalDmr=0.05,
+                                   cores=3,
+                                   maxGap=300,
+                                   cutoff=NULL,
+                                   pickCutoff=TRUE,
+                                   smooth=TRUE,
+                                   smoothFunction=loessByCluster,
+                                   useWeights=FALSE,
+                                   permutations=NULL,
+                                   B=250,
+                                   nullMethod="bootstrap",
+                                   Rplot=T,
+                                   PDFplot=T)
+
+
+
+write.csv(data.frame(myDMR_Mother1_to_Baby2$BumphunterDMR), file="myDMR_Mother1_to_Baby2.csv")
+
+myGSEA_Mother1_to_Baby2 <- champ.GSEA(beta=myCombat,DMP=myDMP[["Mother1_to_Baby2"]], DMR=myDMR_Mother1_to_Baby2, 
+                                      arraytype="EPIC",adjPval=0.05, method="fisher")
+
+write.csv(data.frame(myGSEA_Mother1_to_Baby2$DMP), file = "myGSEA_Mother1_to_Baby2_DMP.csv")
+write.csv(data.frame(myGSEA_Mother1_to_Baby2$DMR), file = "myGSEA_Mother1_to_Baby2_DMR.csv")
+
+
+#Mother1_to_Mother3
+myDMR_Mother1_to_Mother3 = champ.DMR(beta=myCombat,
+                                     pheno=myLoad$pd$Sample_Group,
+                                     compare.group=c("Mother1","Mother3"),
+                                     arraytype="EPIC",
+                                     method = "Bumphunter",
+                                     minProbes=7,
+                                     adjPvalDmr=0.05,
+                                     cores=3,
+                                     maxGap=300,
+                                     cutoff=NULL,
+                                     pickCutoff=TRUE,
+                                     smooth=TRUE,
+                                     smoothFunction=loessByCluster,
+                                     useWeights=FALSE,
+                                     permutations=NULL,
+                                     B=250,
+                                     nullMethod="bootstrap",
+                                     Rplot=T,
+                                     PDFplot=T)
+
+
+
+write.csv(data.frame(myDMR_Mother1_to_Mother3$BumphunterDMR), file="myDMR_Mother1_to_Mother3.csv")
+
+myGSEA_Mother1_to_Mother3 <- champ.GSEA(beta=myCombat,DMP=myDMP[["Mother1_to_Mother3"]], DMR=myDMR_Mother1_to_Mother3, 
+                                        arraytype="EPIC",adjPval=0.05, method="fisher")
+
+write.csv(data.frame(myGSEA_Mother1_to_Mother3$DMP), file = "myGSEA_Mother1_to_Mother3_DMP.csv")
+write.csv(data.frame(myGSEA_Mother1_to_Mother3$DMR), file = "myGSEA_Mother1_to_Mother3_DMR.csv")
+
+
+
+#Mother1_to_Baby3
+myDMR_Mother1_to_Baby3 = champ.DMR(beta=myCombat,
+                                   pheno=myLoad$pd$Sample_Group,
+                                   compare.group=c("Mother1","Baby3"),
+                                   arraytype="EPIC",
+                                   method = "Bumphunter",
+                                   minProbes=7,
+                                   adjPvalDmr=0.05,
+                                   cores=3,
+                                   maxGap=300,
+                                   cutoff=NULL,
+                                   pickCutoff=TRUE,
+                                   smooth=TRUE,
+                                   smoothFunction=loessByCluster,
+                                   useWeights=FALSE,
+                                   permutations=NULL,
+                                   B=250,
+                                   nullMethod="bootstrap",
+                                   Rplot=T,
+                                   PDFplot=T)
+
+
+
+write.csv(data.frame(myDMR_Mother1_to_Baby3$BumphunterDMR), file="myDMR_Mother1_to_Baby3.csv")
+
+myGSEA_Mother1_to_Baby3 <- champ.GSEA(beta=myCombat,DMP=myDMP[["Mother1_to_Baby3"]], DMR=myDMR_Mother1_to_Baby3, 
+                                      arraytype="EPIC",adjPval=0.05, method="fisher")
+
+write.csv(data.frame(myGSEA_Mother1_to_Baby3$DMP), file = "myGSEA_Mother1_to_Baby3_DMP.csv")
+write.csv(data.frame(myGSEA_Mother1_to_Baby3$DMR), file = "myGSEA_Mother1_to_Baby3_DMR.csv")
+
+
+
+#Mother2_to_Baby1
+myDMR_Mother2_to_Baby1 = champ.DMR(beta=myCombat,
+                                   pheno=myLoad$pd$Sample_Group,
+                                   compare.group=c("Mother2","Baby1"),
+                                   arraytype="EPIC",
+                                   method = "Bumphunter",
+                                   minProbes=7,
+                                   adjPvalDmr=0.05,
+                                   cores=3,
+                                   maxGap=300,
+                                   cutoff=NULL,
+                                   pickCutoff=TRUE,
+                                   smooth=TRUE,
+                                   smoothFunction=loessByCluster,
+                                   useWeights=FALSE,
+                                   permutations=NULL,
+                                   B=250,
+                                   nullMethod="bootstrap",
+                                   Rplot=T,
+                                   PDFplot=T)
+
+
+
+write.csv(data.frame(myDMR_Mother2_to_Baby1$BumphunterDMR), file="myDMR_Mother2_to_Baby1.csv")
+
+myGSEA_Mother2_to_Baby1 <- champ.GSEA(beta=myCombat,DMP=myDMP[["Mother2_to_Baby1"]], DMR=myDMR_Mother2_to_Baby1, 
+                                      arraytype="EPIC",adjPval=0.05, method="fisher")
+
+write.csv(data.frame(myGSEA_Mother2_to_Baby1$DMP), file = "myGSEA_Mother2_to_Baby1_DMP.csv")
+write.csv(data.frame(myGSEA_Mother2_to_Baby1$DMR), file = "myGSEA_Mother2_to_Baby1_DMR.csv")
+
+
+
+#Mother2_to_Baby2
+myDMR_Mother2_to_Baby2 = champ.DMR(beta=myCombat,
+                                   pheno=myLoad$pd$Sample_Group,
+                                   compare.group=c("Mother2","Baby2"),
+                                   arraytype="EPIC",
+                                   method = "Bumphunter",
+                                   minProbes=7,
+                                   adjPvalDmr=0.05,
+                                   cores=3,
+                                   maxGap=300,
+                                   cutoff=NULL,
+                                   pickCutoff=TRUE,
+                                   smooth=TRUE,
+                                   smoothFunction=loessByCluster,
+                                   useWeights=FALSE,
+                                   permutations=NULL,
+                                   B=250,
+                                   nullMethod="bootstrap",
+                                   Rplot=T,
+                                   PDFplot=T)
+
+
+
+write.csv(data.frame(myDMR_Mother2_to_Baby2$BumphunterDMR), file="myDMR_Mother2_to_Baby2.csv")
+
+myGSEA_Mother2_to_Baby2 <- champ.GSEA(beta=myCombat,DMP=myDMP[["Mother2_to_Baby2"]], DMR=myDMR_Mother2_to_Baby2, 
+                                      arraytype="EPIC",adjPval=0.05, method="fisher")
+
+write.csv(data.frame(myGSEA_Mother2_to_Baby2$DMP), file = "myGSEA_Mother2_to_Baby2_DMP.csv")
+write.csv(data.frame(myGSEA_Mother2_to_Baby2$DMR), file = "myGSEA_Mother2_to_Baby2_DMR.csv")
+
+
+
+#Mother2_to_Mother3
+myDMR_Mother2_to_Mother3 = champ.DMR(beta=myCombat,
+                                     pheno=myLoad$pd$Sample_Group,
+                                     compare.group=c("Mother2","Mother3"),
+                                     arraytype="EPIC",
+                                     method = "Bumphunter",
+                                     minProbes=7,
+                                     adjPvalDmr=0.05,
+                                     cores=3,
+                                     maxGap=300,
+                                     cutoff=NULL,
+                                     pickCutoff=TRUE,
+                                     smooth=TRUE,
+                                     smoothFunction=loessByCluster,
+                                     useWeights=FALSE,
+                                     permutations=NULL,
+                                     B=250,
+                                     nullMethod="bootstrap",
+                                     Rplot=T,
+                                     PDFplot=T)
+
+
+
+write.csv(data.frame(myDMR_Mother2_to_Mother3$BumphunterDMR), file="myDMR_Mother2_to_Mother3.csv")
+
+myGSEA_Mother2_to_Mother3 <- champ.GSEA(beta=myCombat,DMP=myDMP[["Mother2_to_Mother3"]], DMR=myDMR_Mother2_to_Mother3, 
+                                        arraytype="EPIC",adjPval=0.05, method="fisher")
+
+write.csv(data.frame(myGSEA_Mother2_to_Mother3$DMP), file = "myGSEA_Mother2_to_Mother3_DMP.csv")
+write.csv(data.frame(myGSEA_Mother2_to_Mother3$DMR), file = "myGSEA_Mother2_to_Mother3_DMR.csv")
+
+
+
+#Mother2_to_Baby3
+myDMR_Mother2_to_Baby3 = champ.DMR(beta=myCombat,
+                                   pheno=myLoad$pd$Sample_Group,
+                                   compare.group=c("Mother2","Baby3"),
+                                   arraytype="EPIC",
+                                   method = "Bumphunter",
+                                   minProbes=7,
+                                   adjPvalDmr=0.05,
+                                   cores=3,
+                                   maxGap=300,
+                                   cutoff=NULL,
+                                   pickCutoff=TRUE,
+                                   smooth=TRUE,
+                                   smoothFunction=loessByCluster,
+                                   useWeights=FALSE,
+                                   permutations=NULL,
+                                   B=250,
+                                   nullMethod="bootstrap",
+                                   Rplot=T,
+                                   PDFplot=T)
+
+
+
+write.csv(data.frame(myDMR_Mother2_to_Baby3$BumphunterDMR), file="myDMR_Mother2_to_Baby3.csv")
+
+myGSEA_Mother2_to_Baby3 <- champ.GSEA(beta=myCombat,DMP=myDMP[["Mother2_to_Baby3"]], DMR=myDMR_Mother2_to_Baby3, 
+                                      arraytype="EPIC",adjPval=0.05, method="fisher")
+
+write.csv(data.frame(myGSEA_Mother2_to_Baby3$DMP), file = "myGSEA_Mother2_to_Baby3_DMP.csv")
+write.csv(data.frame(myGSEA_Mother2_to_Baby3$DMR), file = "myGSEA_Mother2_to_Baby3_DMR.csv")
+
+
+#Baby1_to_Baby2
+myDMR_Baby1_to_Baby2 = champ.DMR(beta=myCombat,
+                                 pheno=myLoad$pd$Sample_Group,
+                                 compare.group=c("Baby1","Baby2"),
+                                 arraytype="EPIC",
+                                 method = "Bumphunter",
+                                 minProbes=7,
+                                 adjPvalDmr=0.05,
+                                 cores=3,
+                                 maxGap=300,
+                                 cutoff=NULL,
+                                 pickCutoff=TRUE,
+                                 smooth=TRUE,
+                                 smoothFunction=loessByCluster,
+                                 useWeights=FALSE,
+                                 permutations=NULL,
+                                 B=250,
+                                 nullMethod="bootstrap",
+                                 Rplot=T,
+                                 PDFplot=T)
+
+
+
+write.csv(data.frame(myDMR_Baby1_to_Baby2$BumphunterDMR), file="myDMR_Baby1_to_Baby2.csv")
+
+myGSEA_Baby1_to_Baby2 <- champ.GSEA(beta=myCombat,DMP=myDMP[["Baby1_to_Baby2"]], DMR=myDMR_Baby1_to_Baby2, 
+                                    arraytype="EPIC",adjPval=0.05, method="fisher")
+
+write.csv(data.frame(myGSEA_Baby1_to_Baby2$DMP), file = "myGSEA_Baby1_to_Baby2_DMP.csv")
+write.csv(data.frame(myGSEA_Baby1_to_Baby2$DMR), file = "myGSEA_Baby1_to_Baby2_DMR.csv")
+
+
+
+#Baby1_to_Mother3
+myDMR_Baby1_to_Mother3 = champ.DMR(beta=myCombat,
+                                   pheno=myLoad$pd$Sample_Group,
+                                   compare.group=c("Baby1","Mother3"),
+                                   arraytype="EPIC",
+                                   method = "Bumphunter",
+                                   minProbes=7,
+                                   adjPvalDmr=0.05,
+                                   cores=3,
+                                   maxGap=300,
+                                   cutoff=NULL,
+                                   pickCutoff=TRUE,
+                                   smooth=TRUE,
+                                   smoothFunction=loessByCluster,
+                                   useWeights=FALSE,
+                                   permutations=NULL,
+                                   B=250,
+                                   nullMethod="bootstrap",
+                                   Rplot=T,
+                                   PDFplot=T)
+
+
+
+write.csv(data.frame(myDMR_Baby1_to_Mother3$BumphunterDMR), file="myDMR_Baby1_to_Mother3.csv")
+
+myGSEA_Baby1_to_Mother3 <- champ.GSEA(beta=myCombat,DMP=myDMP[["Baby1_to_Mother3"]], DMR=myDMR_Baby1_to_Mother3, 
+                                      arraytype="EPIC",adjPval=0.05, method="fisher")
+
+write.csv(data.frame(myGSEA_Baby1_to_Mother3$DMP), file = "myGSEA_Baby1_to_Mother3_DMP.csv")
+write.csv(data.frame(myGSEA_Baby1_to_Mother3$DMR), file = "myGSEA_Baby1_to_Mother3_DMR.csv")
+
+
+#Baby1_to_Baby3
+myDMR_Baby1_to_Baby3 = champ.DMR(beta=myCombat,
+                                 pheno=myLoad$pd$Sample_Group,
+                                 compare.group=c("Baby1","Baby3"),
+                                 arraytype="EPIC",
+                                 method = "Bumphunter",
+                                 minProbes=7,
+                                 adjPvalDmr=0.05,
+                                 cores=3,
+                                 maxGap=300,
+                                 cutoff=NULL,
+                                 pickCutoff=TRUE,
+                                 smooth=TRUE,
+                                 smoothFunction=loessByCluster,
+                                 useWeights=FALSE,
+                                 permutations=NULL,
+                                 B=250,
+                                 nullMethod="bootstrap",
+                                 Rplot=T,
+                                 PDFplot=T)
+
+
+
+write.csv(data.frame(myDMR_Baby1_to_Baby3$BumphunterDMR), file="myDMR_Baby1_to_Baby3.csv")
+
+myGSEA_Baby1_to_Baby3 <- champ.GSEA(beta=myCombat,DMP=myDMP[["Baby1_to_Baby3"]], DMR=myDMR_Baby1_to_Baby3, 
+                                    arraytype="EPIC",adjPval=0.05, method="fisher")
+
+write.csv(data.frame(myGSEA_Baby1_to_Baby3$DMP), file = "myGSEA_Baby1_to_Baby3_DMP.csv")
+write.csv(data.frame(myGSEA_Baby1_to_Baby3$DMR), file = "myGSEA_Baby1_to_Baby3_DMR.csv")
+
+
+#Baby2_to_Mother3
+myDMR_Baby2_to_Mother3 = champ.DMR(beta=myCombat,
+                                   pheno=myLoad$pd$Sample_Group,
+                                   compare.group=c("Baby2","Mother3"),
+                                   arraytype="EPIC",
+                                   method = "Bumphunter",
+                                   minProbes=7,
+                                   adjPvalDmr=0.05,
+                                   cores=3,
+                                   maxGap=300,
+                                   cutoff=NULL,
+                                   pickCutoff=TRUE,
+                                   smooth=TRUE,
+                                   smoothFunction=loessByCluster,
+                                   useWeights=FALSE,
+                                   permutations=NULL,
+                                   B=250,
+                                   nullMethod="bootstrap",
+                                   Rplot=T,
+                                   PDFplot=T)
+
+
+
+write.csv(data.frame(myDMR_Baby2_to_Mother3$BumphunterDMR), file="myDMR_Baby2_to_Mother3.csv")
+
+myGSEA_Baby2_to_Mother3 <- champ.GSEA(beta=myCombat,DMP=myDMP[["Baby2_to_Mother3"]], DMR=myDMR_Baby2_to_Mother3, 
+                                      arraytype="EPIC",adjPval=0.05, method="fisher")
+
+write.csv(data.frame(myGSEA_Baby2_to_Mother3$DMP), file = "myGSEA_Baby2_to_Mother3_DMP.csv")
+write.csv(data.frame(myGSEA_Baby2_to_Mother3$DMR), file = "myGSEA_Baby2_to_Mother3_DMR.csv")
+
+
+#Baby2_to_Baby3
+myDMR_Baby2_to_Baby3 = champ.DMR(beta=myCombat,
+                                 pheno=myLoad$pd$Sample_Group,
+                                 compare.group=c("Baby2","Baby3"),
+                                 arraytype="EPIC",
+                                 method = "Bumphunter",
+                                 minProbes=7,
+                                 adjPvalDmr=0.05,
+                                 cores=3,
+                                 maxGap=300,
+                                 cutoff=NULL,
+                                 pickCutoff=TRUE,
+                                 smooth=TRUE,
+                                 smoothFunction=loessByCluster,
+                                 useWeights=FALSE,
+                                 permutations=NULL,
+                                 B=250,
+                                 nullMethod="bootstrap",
+                                 Rplot=T,
+                                 PDFplot=T)
+
+
+
+write.csv(data.frame(myDMR_Baby2_to_Baby3$BumphunterDMR), file="myDMR_Baby2_to_Baby3.csv")
+
+myGSEA_Baby2_to_Baby3 <- champ.GSEA(beta=myCombat,DMP=myDMP[["Baby2_to_Baby3"]], DMR=myDMR_Baby2_to_Baby3, 
+                                    arraytype="EPIC",adjPval=0.05, method="fisher")
+
+write.csv(data.frame(myGSEA_Baby2_to_Baby3$DMP), file = "myGSEA_Baby2_to_Baby3_DMP.csv")
+write.csv(data.frame(myGSEA_Baby2_to_Baby3$DMR), file = "myGSEA_Baby2_to_Baby3_DMR.csv")
+
+
+#Mother3_to_Baby3
+myDMR_Mother3_to_Baby3 = champ.DMR(beta=myCombat,
+                                   pheno=myLoad$pd$Sample_Group,
+                                   compare.group=c("Mother3","Baby3"),
+                                   arraytype="EPIC",
+                                   method = "Bumphunter",
+                                   minProbes=7,
+                                   adjPvalDmr=0.05,
+                                   cores=3,
+                                   maxGap=300,
+                                   cutoff=NULL,
+                                   pickCutoff=TRUE,
+                                   smooth=TRUE,
+                                   smoothFunction=loessByCluster,
+                                   useWeights=FALSE,
+                                   permutations=NULL,
+                                   B=250,
+                                   nullMethod="bootstrap",
+                                   Rplot=T,
+                                   PDFplot=T)
+
+
+
+write.csv(data.frame(myDMR_Mother3_to_Baby3$BumphunterDMR), file="myDMR_Mother3_to_Baby3.csv")
+
+myGSEA_Mother3_to_Baby3 <- champ.GSEA(beta=myCombat,DMP=myDMP[["Mother3_to_Baby3"]], DMR=myDMR_Mother3_to_Baby3, 
+                                      arraytype="EPIC",adjPval=0.05, method="fisher")
+
+write.csv(data.frame(myGSEA_Mother3_to_Baby3$DMP), file = "myGSEA_Mother3_to_Baby3_DMP.csv")
+write.csv(data.frame(myGSEA_Mother3_to_Baby3$DMR), file = "myGSEA_Mother3_to_Baby3_DMR.csv")
+
+
+##end
+
+#filter list
+myDMP_filtered <- list()
+
+for (i in comparision) {
+  myDMP_filtered[[i]] <- subset(myDMP[[i]] , subset = adj.P.Val < 0.05)
+}
+
+
+##end
+comparision <- c("Mother1_to_Mother2", "Mother1_to_Baby1", "Mother1_to_Baby2", "Mother1_to_Mother3", "Mother1_to_Baby3", 
+                 "Mother2_to_Baby1",  
+                 "Mother2_to_Baby2",  "Mother2_to_Mother3", "Mother2_to_Baby3", "Baby1_to_Baby2", "Baby1_to_Mother3", 
+                 "Baby1_to_Baby3",    
+                 "Baby2_to_Mother3",  "Baby2_to_Baby3", "Mother3_to_Baby3")
+
+gometh_Mother1_to_Mother2 <- gometh(sig.cpg = rownames(myDMP_filtered[["Mother1_to_Mother2"]]),
+                                    all.cpg = rownames(myDMP[["Mother1_to_Mother2"]]),
+                                    collection = c("GO","KEGG"),
+                                    genomic.features = "ALL",
+                                    sig.genes = TRUE,
+                                    array.type = "EPIC")
+write.csv(gometh_Mother1_to_Mother2, file = "gometh_0.05_gsea_dmp_Mother1_to_Mother2.csv")
+
+
+
+gometh_Mother1_to_Baby1 <- gometh(sig.cpg = rownames(myDMP_filtered[["Mother1_to_Baby1"]]),
+                                  all.cpg = rownames(myDMP[["Mother1_to_Baby1"]]),
+                                  collection = c("GO","KEGG"),
+                                  genomic.features = "ALL",
+                                  sig.genes = TRUE,
+                                  array.type = "EPIC")
+write.csv(gometh_Mother1_to_Baby1, file = "gometh_0.05_gsea_dmp_Mother1_to_Baby1.csv")
+
+
+
+gometh_Mother1_to_Baby2 <- gometh(sig.cpg = rownames(myDMP_filtered[["Mother1_to_Baby2"]]),
+                                  all.cpg = rownames(myDMP[["Mother1_to_Baby2"]]),
+                                  collection = c("GO","KEGG"),
+                                  genomic.features = "ALL",
+                                  sig.genes = TRUE,
+                                  array.type = "EPIC")
+write.csv(gometh_Mother1_to_Baby2, file = "gometh_0.05_gsea_dmp_Mother1_to_Baby2.csv")
+
+
+
+gometh_Mother1_to_Mother3 <- gometh(sig.cpg = rownames(myDMP_filtered[["Mother1_to_Mother3"]]),
+                                    all.cpg = rownames(myDMP[["Mother1_to_Mother3"]]),
+                                    collection = c("GO","KEGG"),
+                                    genomic.features = "ALL",
+                                    sig.genes = TRUE,
+                                    array.type = "EPIC")
+write.csv(gometh_Mother1_to_Mother3, file = "gometh_0.05_gsea_dmp_Mother1_to_Mother3.csv")
+
+gometh_Mother1_to_Baby3 <- gometh(sig.cpg = rownames(myDMP_filtered[["Mother1_to_Baby3"]]),
+                                  all.cpg = rownames(myDMP[["Mother1_to_Baby3"]]),
+                                  collection = c("GO","KEGG"),
+                                  genomic.features = "ALL",
+                                  sig.genes = TRUE,
+                                  array.type = "EPIC")
+write.csv(gometh_Mother1_to_Baby3, file = "gometh_0.05_gsea_dmp_Mother1_to_Baby3.csv")
+
+gometh_Mother2_to_Baby1 <- gometh(sig.cpg = rownames(myDMP_filtered[["Mother2_to_Baby1"]]),
+                                  all.cpg = rownames(myDMP[["Mother2_to_Baby1"]]),
+                                  collection = c("GO","KEGG"),
+                                  genomic.features = "ALL",
+                                  sig.genes = TRUE,
+                                  array.type = "EPIC")
+write.csv(gometh_Mother2_to_Baby1, file = "gometh_0.05_gsea_dmp_Mother2_to_Baby1.csv")
+
+
+gometh_Mother2_to_Mother3 <- gometh(sig.cpg = rownames(myDMP_filtered[["Mother2_to_Mother3"]]),
+                                    all.cpg = rownames(myDMP[["Mother2_to_Mother3"]]),
+                                    collection = c("GO","KEGG"),
+                                    genomic.features = "ALL",
+                                    sig.genes = TRUE,
+                                    array.type = "EPIC")
+write.csv(gometh_Mother2_to_Mother3, file = "gometh_0.05_gsea_dmp_Mother2_to_Mother3.csv")
+
+gometh_Mother2_to_Baby3 <- gometh(sig.cpg = rownames(myDMP_filtered[["Mother2_to_Baby3"]]),
+                                  all.cpg = rownames(myDMP[["Mother2_to_Baby3"]]),
+                                  collection = c("GO","KEGG"),
+                                  genomic.features = "ALL",
+                                  sig.genes = TRUE,
+                                  array.type = "EPIC")
+write.csv(gometh_Mother2_to_Baby3, file = "gometh_0.05_gsea_dmp_Mother2_to_Baby3.csv")
+
+
+gometh_Baby1_to_Baby2 <- gometh(sig.cpg = rownames(myDMP_filtered[["Baby1_to_Baby2"]]),
+                                all.cpg = rownames(myDMP[["Baby1_to_Baby2"]]),
+                                collection = c("GO","KEGG"),
+                                genomic.features = "ALL",
+                                sig.genes = TRUE,
+                                array.type = "EPIC")
+write.csv(gometh_Baby1_to_Baby2, file = "gometh_0.05_gsea_dmp_Baby1_to_Baby2.csv")
+
+
+gometh_Baby1_to_Mother3 <- gometh(sig.cpg = rownames(myDMP_filtered[["Baby1_to_Mother3"]]),
+                                  all.cpg = rownames(myDMP[["Baby1_to_Mother3"]]),
+                                  collection = c("GO","KEGG"),
+                                  genomic.features = "ALL",
+                                  sig.genes = TRUE,
+                                  array.type = "EPIC")
+write.csv(gometh_Baby1_to_Mother3, file = "gometh_0.05_gsea_dmp_Baby1_to_Mother3.csv")
+
+gometh_Baby1_to_Baby3 <- gometh(sig.cpg = rownames(myDMP_filtered[["Baby1_to_Mother3"]]),
+                                all.cpg = rownames(myDMP[["Baby1_to_Mother3"]]),
+                                collection = c("GO","KEGG"),
+                                genomic.features = "ALL",
+                                sig.genes = TRUE,
+                                array.type = "EPIC")
+write.csv(gometh_Baby1_to_Mother3, file = "gometh_0.05_gsea_dmp_Baby1_to_Mother3.csv")
+
+
+gometh_Baby2_to_Baby3 <- gometh(sig.cpg = rownames(myDMP_filtered[["Baby2_to_Baby3"]]),
+                                all.cpg = rownames(myDMP[["Baby2_to_Baby3"]]),
+                                collection = c("GO","KEGG"),
+                                genomic.features = "ALL",
+                                sig.genes = TRUE,
+                                array.type = "EPIC")
+write.csv(gometh_Baby2_to_Baby3, file = "gometh_0.05_gsea_dmp_Baby2_to_Baby3.csv")
+
+gometh_Mother3_to_Baby3 <- gometh(sig.cpg = rownames(myDMP_filtered[["Mother3_to_Baby3"]]),
+                                  all.cpg = rownames(myDMP[["Mother3_to_Baby3"]]),
+                                  collection = c("GO","KEGG"),
+                                  genomic.features = "ALL",
+                                  sig.genes = TRUE,
+                                  array.type = "EPIC")
+write.csv(gometh_Mother3_to_Baby3, file = "gometh_0.05_gsea_dmp_Mother3_to_Baby3.csv")
+
+gometh_Baby2_to_Mother3 <- gometh(sig.cpg = rownames(myDMP_filtered[["Baby2_to_Mother3"]]),
+                                  all.cpg = rownames(myDMP[["Baby2_to_Mother3"]]),
+                                  collection = c("GO","KEGG"),
+                                  genomic.features = "ALL",
+                                  sig.genes = TRUE,
+                                  array.type = "EPIC")
+write.csv(gometh_Baby2_to_Mother3, file = "gometh_0.05_gsea_dmp_Baby2_to_Mother3.csv")
+
+#0.01 cutoff
+myDMP_0.01_filtered <- list()
+
+for (i in comparision) {
+  myDMP_0.01_filtered[[i]] <- subset(myDMP[[i]] , subset = adj.P.Val < 0.01)
+}
+
+
+gometh_Mother1_to_Mother2 <- gometh(sig.cpg = rownames(myDMP_0.01_filtered[["Mother1_to_Mother2"]]),
+                                    all.cpg = rownames(myDMP[["Mother1_to_Mother2"]]),
+                                    collection = c("GO","KEGG"),
+                                    genomic.features = "ALL",
+                                    sig.genes = TRUE,
+                                    array.type = "EPIC")
+write.csv(gometh_Mother1_to_Mother2, file = "gometh_0.01_gsea_dmp_Mother1_to_Mother2.csv")
+
+
+
+gometh_Mother1_to_Baby1 <- gometh(sig.cpg = rownames(myDMP_0.01_filtered[["Mother1_to_Baby1"]]),
+                                  all.cpg = rownames(myDMP[["Mother1_to_Baby1"]]),
+                                  collection = c("GO","KEGG"),
+                                  genomic.features = "ALL",
+                                  sig.genes = TRUE,
+                                  array.type = "EPIC")
+write.csv(gometh_Mother1_to_Baby1, file = "gometh_0.01_gsea_dmp_Mother1_to_Baby1.csv")
+
+
+gometh_Mother1_to_Mother3 <- gometh(sig.cpg = rownames(myDMP_0.01_filtered[["Mother1_to_Mother3"]]),
+                                    all.cpg = rownames(myDMP[["Mother1_to_Mother3"]]),
+                                    collection = c("GO","KEGG"),
+                                    genomic.features = "ALL",
+                                    sig.genes = TRUE,
+                                    array.type = "EPIC")
+write.csv(gometh_Mother1_to_Mother3, file = "gometh_0.01_gsea_dmp_Mother1_to_Mother3.csv")
+
+gometh_Mother1_to_Baby3 <- gometh(sig.cpg = rownames(myDMP_0.01_filtered[["Mother1_to_Baby3"]]),
+                                  all.cpg = rownames(myDMP[["Mother1_to_Baby3"]]),
+                                  collection = c("GO","KEGG"),
+                                  genomic.features = "ALL",
+                                  sig.genes = TRUE,
+                                  array.type = "EPIC")
+write.csv(gometh_Mother1_to_Baby3, file = "gometh_0.01_gsea_dmp_Mother1_to_Baby3.csv")
+
+gometh_Mother2_to_Baby1 <- gometh(sig.cpg = rownames(myDMP_0.01_filtered[["Mother2_to_Baby1"]]),
+                                  all.cpg = rownames(myDMP[["Mother2_to_Baby1"]]),
+                                  collection = c("GO","KEGG"),
+                                  genomic.features = "ALL",
+                                  sig.genes = TRUE,
+                                  array.type = "EPIC")
+write.csv(gometh_Mother2_to_Baby1, file = "gometh_0.01_gsea_dmp_Mother2_to_Baby1.csv")
+
+
+gometh_Mother2_to_Mother3 <- gometh(sig.cpg = rownames(myDMP_0.01_filtered[["Mother2_to_Mother3"]]),
+                                    all.cpg = rownames(myDMP[["Mother2_to_Mother3"]]),
+                                    collection = c("GO","KEGG"),
+                                    genomic.features = "ALL",
+                                    sig.genes = TRUE,
+                                    array.type = "EPIC")
+write.csv(gometh_Mother2_to_Mother3, file = "gometh_0.01_gsea_dmp_Mother2_to_Mother3.csv")
+
+gometh_Mother2_to_Baby3 <- gometh(sig.cpg = rownames(myDMP_0.01_filtered[["Mother2_to_Baby3"]]),
+                                  all.cpg = rownames(myDMP[["Mother2_to_Baby3"]]),
+                                  collection = c("GO","KEGG"),
+                                  genomic.features = "ALL",
+                                  sig.genes = TRUE,
+                                  array.type = "EPIC")
+write.csv(gometh_Mother2_to_Baby3, file = "gometh_0.01_gsea_dmp_Mother2_to_Baby3.csv")
+
+gometh_Baby1_to_Mother3 <- gometh(sig.cpg = rownames(myDMP_0.01_filtered[["Baby1_to_Mother3"]]),
+                                  all.cpg = rownames(myDMP[["Baby1_to_Mother3"]]),
+                                  collection = c("GO","KEGG"),
+                                  genomic.features = "ALL",
+                                  sig.genes = TRUE,
+                                  array.type = "EPIC")
+write.csv(gometh_Baby1_to_Mother3, file = "gometh_0.01_gsea_dmp_Baby1_to_Mother3.csv")
+
+gometh_Baby1_to_Baby3 <- gometh(sig.cpg = rownames(myDMP_0.01_filtered[["Baby1_to_Mother3"]]),
+                                all.cpg = rownames(myDMP[["Baby1_to_Mother3"]]),
+                                collection = c("GO","KEGG"),
+                                genomic.features = "ALL",
+                                sig.genes = TRUE,
+                                array.type = "EPIC")
+write.csv(gometh_Baby1_to_Mother3, file = "gometh_0.01_gsea_dmp_Baby1_to_Mother3.csv")
+
+
+gometh_Baby2_to_Baby3 <- gometh(sig.cpg = rownames(myDMP_0.01_filtered[["Baby2_to_Baby3"]]),
+                                all.cpg = rownames(myDMP[["Baby2_to_Baby3"]]),
+                                collection = c("GO","KEGG"),
+                                genomic.features = "ALL",
+                                sig.genes = TRUE,
+                                array.type = "EPIC")
+write.csv(gometh_Baby2_to_Baby3, file = "gometh_0.01_gsea_dmp_Baby2_to_Baby3.csv")
+
+gometh_Mother3_to_Baby3 <- gometh(sig.cpg = rownames(myDMP_0.01_filtered[["Mother3_to_Baby3"]]),
+                                  all.cpg = rownames(myDMP[["Mother3_to_Baby3"]]),
+                                  collection = c("GO","KEGG"),
+                                  genomic.features = "ALL",
+                                  sig.genes = TRUE,
+                                  array.type = "EPIC")
+write.csv(gometh_Mother3_to_Baby3, file = "gometh_0.01_gsea_dmp_Mother3_to_Baby3.csv")
+
+##end
